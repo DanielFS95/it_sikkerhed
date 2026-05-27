@@ -26,35 +26,50 @@ class Data_handler:
         self.users.append(user)
         self.flat_file_loader.save_memory_database_to_file(self.users)
 
-    def disable_user(self, user_id:int):
+    def disable_user(self, user_id: int):
         user = self.get_user_by_id(user_id)
-        user.enabled = False
+        if user:
+            user.enabled = False
+            self.flat_file_loader.save_memory_database_to_file(self.users)
 
-    def enable_user(self, user_id:int):
+    def enable_user(self, user_id: int):
         user = self.get_user_by_id(user_id)
-        user.enabled = True
+        if user:
+            user.enabled = True
+            self.flat_file_loader.save_memory_database_to_file(self.users)
+
+    def delete_user(self, user_id: int):
+        user = self.get_user_by_id(user_id)
+        if user:
+            self.users.remove(user)
+            self.flat_file_loader.save_memory_database_to_file(self.users)
 
     def update_first_name(self, user_id, new_first_name):
         user = self.get_user_by_id(user_id)
         if user:
             user.first_name = new_first_name
+            self.flat_file_loader.save_memory_database_to_file(self.users)
 
     def update_last_name(self, user_id, new_last_name):
         user = self.get_user_by_id(user_id)
         if user:
             user.last_name = new_last_name
+            self.flat_file_loader.save_memory_database_to_file(self.users)
 
     def update_address(self, user_id, new_address):
         user = self.get_user_by_id(user_id)
         if user:
             user.address = new_address
+            self.flat_file_loader.save_memory_database_to_file(self.users)
 
     def update_street_number(self, user_id, new_street_number):
         user = self.get_user_by_id(user_id)
         if user:
             user.street_number = new_street_number
+            self.flat_file_loader.save_memory_database_to_file(self.users)
 
     def update_password(self, user_id, new_password):
         user = self.get_user_by_id(user_id)
         if user:
             user.password = new_password
+            self.flat_file_loader.save_memory_database_to_file(self.users)
