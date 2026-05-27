@@ -91,6 +91,9 @@ def test_create_and_find_user():
     assert user.enabled is True
 ```
 
+<img width="984" height="488" alt="Screenshot 2026-05-27 230318" src="https://github.com/user-attachments/assets/f76d6df4-b704-4c75-9967-187698313d67" />
+
+
 ---
 
 ## Kryptering og Hashing
@@ -162,3 +165,10 @@ I produktionssystemer bør plaintext-data leve kortest muligt – ideelt kun i v
 - **`person_id` og `enabled` krypteres ikke** – de anses ikke som personhenførbare.
 - **GDPR kræver ikke kryptering i sig selv**, men kryptering er stærk dokumentation for "appropriate technical measures" (Art. 32).
 - **Passwords gemmes aldrig i klartekst** – heller ikke i hukommelsen efter den første `create_user`-kald.
+
+
+
+
+<img width="971" height="264" alt="image" src="https://github.com/user-attachments/assets/9e31dc6d-b82e-4d87-9172-298b4452a018" />
+
+
