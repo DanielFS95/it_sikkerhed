@@ -90,3 +90,9 @@ def test_create_and_find_user():
     assert user.first_name == "John"
     assert user.enabled is True
 ```
+
+
+
+
+
+<img width="984" height="488" alt="image" src="https://github.com/user-attachments/assets/f33d12e0-7775-4b25-9e0a-409577c4a50c" />
