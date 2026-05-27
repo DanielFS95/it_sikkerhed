@@ -91,8 +91,93 @@ def test_create_and_find_user():
     assert user.enabled is True
 ```
 
-
-
-
-
 <img width="984" height="488" alt="image" src="https://github.com/user-attachments/assets/f33d12e0-7775-4b25-9e0a-409577c4a50c" />
+
+---
+
+## Kryptering og Hashing
+
+Kode: `src/flat_file/encryption_service.py` | Tests: `test/test_3_encryption.py`
+
+### Hvilke algoritmer var til rådighed?
+
+Fra benchmark-testen (`test_1_encryption_benchmark.py`) blev følgende testet:
+
+| Algoritme | Type | Nøglelængde |
+|-----------|------|-------------|
+| AES-128 (EAX) | Symmetrisk | 128 bit |
+| **AES-256 (EAX)** | **Symmetrisk** | **256 bit** |
+| Blowfish-128 (CBC) | Symmetrisk | 128 bit |
+| Blowfish-448 (CBC) | Symmetrisk | 448 bit |
+| RSA-2048 | Asymmetrisk | 2048 bit |
+| SHA2-256 / SHA3-256 | Hashing | – |
+| HMAC-SHA256 | Hashing m. nøgle | – |
+
+### Valgte algoritmer og begrundelse
+
+**Kryptering: AES-256 i EAX-tilstand**
+- AES-256 er industristandarder og godkendt til klassificerede data (NSA Suite B)
+- EAX-tilstand giver *authenticated encryption* – giver både fortrolighed og integritetsbeskyttelse i ét trin
+- RSA valgte vi fra, da det er asymmetrisk og beregnet til nøgleudveksling, ikke bulk-kryptering af database-felter
+- Blowfish er ældre og har en lille blokstørrelse (64 bit) der giver risiko for birthday-angreb
+
+**Hashing: HMAC-SHA256 med tilfældig salt (16 bytes)**
+- SHA3 er stærkest kryptografisk set, men HMAC-SHA256 med salt er standardtilgangen til password-hashing i kombination med en serverhemmelighed
+- Det tilfældige salt sikrer at to ens passwords altid giver forskellige hashes → rainbow-table-angreb er umulige
+- HMAC bruger en hemmelig nøgle (server-side secret), som gør offline brute-force markant sværere
+
+---
+
+### Hvornår krypteres data – og hvorfor?
+
+Data krypteres **når det skrives til disk** (i `save_memory_database_to_file`).
+
+Fielterne `first_name`, `last_name`, `address` og `street_number` er persondata efter GDPR. Hvis en angriber får adgang til JSON-filen (f.eks. via server-adgang eller backup-lækage), kan de ikke læse personoplysningerne uden krypteringsnøglen.
+
+Passwords krypteres ikke – de hashes i stedet ved oprettelse, da de aldrig behøver at gendannes til klartekst.
+
+---
+
+### Hvornår dekrypteres data – og hvorfor?
+
+Data dekrypteres **når det læses fra disk** (i `load_memory_database_from_file`).
+
+Dekryptering sker kun ved indlæsning, ikke løbende. Det betyder at systemet har dekrypteret data i RAM mens det kører – et bevidst trade-off for ydeevne. I et mere sikkert design ville man dekryptere on-demand pr. request og straks rydde.
+
+---
+
+### Hvornår fjernes dekrypteret data fra hukommelsen – og hvorfor?
+
+Dekrypteret data fjernes fra hukommelsen med `clear_sensitive_data()` **efter at en operation er afsluttet**.
+
+Hvis data ligger i RAM for længe, er det sårbart over for:
+- **Memory dump-angreb** – en angriber der kan læse proceshukommelsen
+- **Swap-filer** – OS kan skrive RAM til disk i klartekst
+
+I produktionssystemer bør plaintext-data leve kortest muligt – ideelt kun i varighed af ét request.
+
+---
+
+### Bør du tage hensyn til andet?
+
+- **Nøglehåndtering:** Krypteringsnøglen er i `.env`-filen. Hvis angriberen har adgang til begge (fil + nøgle), er krypteringen meningsløs. I produktion bør nøgler ligge i en ekstern key vault (f.eks. Azure Key Vault, HashiCorp Vault).
+- **`person_id` og `enabled` krypteres ikke** – de anses ikke som personhenførbare.
+- **GDPR kræver ikke kryptering i sig selv**, men kryptering er stærk dokumentation for "appropriate technical measures" (Art. 32).
+- **Passwords gemmes aldrig i klartekst** – heller ikke i hukommelsen efter den første `create_user`-kald.
+
+---
+
+## Unit tests – kryptering
+
+Testfilens placering: `test/test_3_encryption.py`
+
+| Test | Hvad testes | Risiko hvis fejl |
+|------|------------|-----------------|
+| `test_persondata_is_encrypted_in_file` | Krypteret ved gem | GDPR-brud – persondata i klartekst på disk |
+| `test_data_is_decrypted_correctly_when_loaded` | Dekrypteret ved load | Data kan ikke gendannes |
+| `test_password_is_hashed_not_stored_as_plaintext` | Password hashes | Kritisk sikkerhedsbrist |
+| `test_correct_password_verification_returns_true` | Korrekt login virker | Ingen kan logge ind |
+| `test_wrong_password_verification_returns_false` | Forkert login afvises | Authentication bypass |
+| `test_same_password_hashed_twice_gives_different_results` | Salt er tilfældig | Rainbow table-angreb mulige |
+| `test_sensitive_data_can_be_cleared_from_memory` | Memory-clear virker | Plaintext lever for længe i RAM |
+| `test_data_on_disk_survives_memory_clear` | Disk-data overlever clear | Data tabt permanent |

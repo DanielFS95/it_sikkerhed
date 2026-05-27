@@ -4,8 +4,9 @@ from src.flat_file.flat_file_loader import Flat_file_loader
 class Data_handler:
     users = []
 
-    def __init__(self, flat_file_name = "users.json"):
-        self.flat_file_loader = Flat_file_loader(flat_file_name)
+    def __init__(self, flat_file_name="users.json", encryption_service=None):
+        self.encryption_service = encryption_service
+        self.flat_file_loader = Flat_file_loader(flat_file_name, encryption_service)
         self.users = self.flat_file_loader.load_memory_database_from_file()
 
     def get_number_of_users(self):
@@ -22,9 +23,21 @@ class Data_handler:
     def create_user(self, first_name, last_name, address, street_number, password):
         userId = len(self.users)
         enabled = True
+        if self.encryption_service:
+            password = self.encryption_service.hash_password(password)
         user = User(userId, first_name, last_name, address, street_number, password, enabled)
         self.users.append(user)
         self.flat_file_loader.save_memory_database_to_file(self.users)
+
+    def verify_password(self, user_id: int, password: str) -> bool:
+        user = self.get_user_by_id(user_id)
+        if not user or not self.encryption_service:
+            return False
+        return self.encryption_service.verify_password(password, user.password)
+
+    def clear_sensitive_data(self):
+        """Fjerner dekrypteret brugerdata fra hukommelsen efter brug."""
+        self.users.clear()
 
     def disable_user(self, user_id: int):
         user = self.get_user_by_id(user_id)
