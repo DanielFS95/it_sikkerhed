@@ -95,7 +95,7 @@ def test_create_and_find_user():
 
 ## Kryptering og Hashing
 
-Kode: `src/flat_file/encryption_service.py` | Tests: `test/test_3_encryption.py`
+Kode: `src/flat_file/encryption_service.py`
 
 ### Hvilke algoritmer var til rådighed?
 
@@ -162,20 +162,3 @@ I produktionssystemer bør plaintext-data leve kortest muligt – ideelt kun i v
 - **`person_id` og `enabled` krypteres ikke** – de anses ikke som personhenførbare.
 - **GDPR kræver ikke kryptering i sig selv**, men kryptering er stærk dokumentation for "appropriate technical measures" (Art. 32).
 - **Passwords gemmes aldrig i klartekst** – heller ikke i hukommelsen efter den første `create_user`-kald.
-
----
-
-## Unit tests – kryptering
-
-Testfilens placering: `test/test_3_encryption.py`
-
-| Test | Hvad testes | Risiko hvis fejl |
-|------|------------|-----------------|
-| `test_persondata_is_encrypted_in_file` | Krypteret ved gem | GDPR-brud – persondata i klartekst på disk |
-| `test_data_is_decrypted_correctly_when_loaded` | Dekrypteret ved load | Data kan ikke gendannes |
-| `test_password_is_hashed_not_stored_as_plaintext` | Password hashes | Kritisk sikkerhedsbrist |
-| `test_correct_password_verification_returns_true` | Korrekt login virker | Ingen kan logge ind |
-| `test_wrong_password_verification_returns_false` | Forkert login afvises | Authentication bypass |
-| `test_same_password_hashed_twice_gives_different_results` | Salt er tilfældig | Rainbow table-angreb mulige |
-| `test_sensitive_data_can_be_cleared_from_memory` | Memory-clear virker | Plaintext lever for længe i RAM |
-| `test_data_on_disk_survives_memory_clear` | Disk-data overlever clear | Data tabt permanent |
